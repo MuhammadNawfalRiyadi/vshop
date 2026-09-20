@@ -1,0 +1,873 @@
+/* ==========================================================================
+   WARNA & FONT — ganti di sini jika ingin tema berbeda
+   ========================================================================== */
+:root {
+  --primary: #ff6b35;
+  --primary-dark: #e04e1a;
+  --primary-light: #baaa9f;
+  --accent: #ffc233;
+  --accent-dark: #f0ad0a;
+  --dark: #2b2d31;
+  --gray: #6b7280;
+  --bg: #fffaf5;
+  --white: #ffffff;
+  --radius: 16px;
+  --shadow: 0 10px 30px rgba(43, 45, 49, 0.08);
+  --shadow-hover: 0 16px 40px rgba(255, 194, 51, 0.35);
+  font-size: 16px;
+}
+
+/* ==========================================================================
+   RESET DASAR
+   ========================================================================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Poppins", "Segoe UI", system-ui, sans-serif;
+  color: var(--dark);
+  background: var(--bg);
+  line-height: 1.6;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.container {
+  width: min(1100px, 92%);
+  margin-inline: auto;
+}
+
+.highlight {
+  color: var(--primary);
+}
+
+/* ==========================================================================
+   NAVBAR
+   ========================================================================== */
+.navbar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 100;
+  background: #0e0e11;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: box-shadow 0.3s ease;
+}
+
+.navbar.scrolled {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+.nav-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Logo kotak putih */
+.brand-logo {
+  font-size: 1.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  background: var(--white);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.brand-logo img,
+.footer-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.brand-name {
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #ffffff;
+}
+
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.nav-link {
+  position: relative;
+  padding: 6px 0;
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: color 0.25s ease;
+}
+
+.nav-link:hover {
+  color: var(--accent);
+}
+
+.nav-link.active {
+  color: var(--accent);
+}
+
+.nav-link.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.insta-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  color: #ffffff;
+  transition: color 0.25s ease, transform 0.25s ease;
+}
+
+.insta-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.insta-icon:hover {
+  color: var(--accent);
+  transform: scale(1.1);
+}
+
+/* Hamburger (hanya muncul di layar kecil) */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.hamburger span {
+  display: block;
+  width: 26px;
+  height: 3px;
+  border-radius: 3px;
+  background: #ffffff;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.hamburger.open span:nth-child(1) {
+  transform: translateY(8px) rotate(45deg);
+}
+
+.hamburger.open span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger.open span:nth-child(3) {
+  transform: translateY(-8px) rotate(-45deg);
+}
+
+/* ==========================================================================
+   TOMBOL
+   ========================================================================== */
+.btn {
+  display: inline-block;
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Tombol utama: kuning solid */
+.btn-primary {
+  background: var(--accent);
+  color: var(--dark);
+  box-shadow: 0 6px 18px rgba(255, 194, 51, 0.4);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+/* ==========================================================================
+   BERANDA / HERO
+   ========================================================================== */
+.hero {
+  padding: 160px 0 80px;
+  background:
+    radial-gradient(circle at 85% 15%, rgba(255, 194, 51, 0.3), transparent 45%),
+    radial-gradient(circle at 10% 90%, rgba(255, 194, 51, 0.2), transparent 40%),
+    linear-gradient(135deg, #fff8e6, #ffedb8);
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 48px;
+  align-items: center;
+}
+
+.hero-title {
+  font-size: clamp(2rem, 4.5vw, 3.2rem);
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 16px;
+  color: var(--dark);
+}
+
+.hero-subtitle {
+  color: var(--gray);
+  font-size: 1.05rem;
+  max-width: 52ch;
+  margin-bottom: 28px;
+}
+
+.btn-hero {
+  font-size: 1.05rem;
+  padding: 14px 32px;
+}
+
+.hero-image img {
+  width: 100%;
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+}
+
+.hero-image img.img-placeholder {
+  border-radius: 24px;
+}
+
+/* ==========================================================================
+   BARIS 4 KARTU FITUR
+   ========================================================================== */
+.features {
+  padding: 0 0 40px;
+}
+
+.features-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+
+.feature-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1 1 200px;
+}
+
+/* Ikon bulat kuning kecil */
+.feature-icon {
+  font-size: 1.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(255, 194, 51, 0.4);
+}
+
+.feature-card h3 {
+  font-size: 1rem;
+  margin-bottom: 2px;
+}
+
+.feature-card p {
+  font-size: 0.85rem;
+  color: var(--gray);
+}
+
+/* ==========================================================================
+   KENAPA PILIH KAMI
+   ========================================================================== */
+.why-section {
+  padding: 40px 0 80px;
+}
+
+.why-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 48px;
+  align-items: center;
+}
+
+.why-title {
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  font-weight: 800;
+  margin-bottom: 16px;
+}
+
+.why-desc {
+  color: var(--gray);
+  max-width: 52ch;
+  margin-bottom: 20px;
+}
+
+/* Teks kecil bergaya tulisan tangan / catatan tempel */
+.why-note {
+  display: inline-block;
+  font-family: "Segoe Script", "Brush Script MT", cursive;
+  font-style: italic;
+  font-size: 1.15rem;
+  color: var(--primary);
+  background: var(--accent);
+  padding: 6px 14px;
+  border-radius: 6px;
+  transform: rotate(-1.5deg);
+}
+
+.why-image img {
+  width: 100%;
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+}
+
+/* ==========================================================================
+   SECTION UMUM
+   ========================================================================== */
+.section {
+  padding: 80px 0;
+}
+
+/* Halaman produk.html & anggota.html berdiri sendiri di bawah navbar fixed */
+.page-top {
+  padding-top: 130px;
+}
+
+.section-alt {
+  background: var(--white);
+}
+
+.section-head {
+  text-align: center;
+  max-width: 620px;
+  margin: 0 auto 40px;
+}
+
+.section-tag {
+  display: inline-block;
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 6px 14px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.section-desc {
+  color: var(--gray);
+}
+
+/* ==========================================================================
+   FILTER KATEGORI
+   ========================================================================== */
+.filter-bar {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 36px;
+}
+
+.filter-btn {
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 9px 22px;
+  border-radius: 999px;
+  border: 2px solid var(--primary-light);
+  background: var(--white);
+  color: var(--dark);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+  border-color: var(--accent);
+}
+
+.filter-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--dark);
+}
+
+/* ==========================================================================
+   GRID PRODUK & KARTU
+   ========================================================================== */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 24px;
+}
+
+.product-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-hover);
+}
+
+.product-img {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
+
+.product-img.img-placeholder {
+  object-fit: contain;
+}
+
+.product-category {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: var(--accent);
+  color: var(--dark);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+.product-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.product-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.product-price {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--primary-dark);
+}
+
+.product-desc {
+  color: var(--gray);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.btn-order {
+  display: block;
+  width: 100%;
+  margin-top: auto;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+/* Ikon WhatsApp kecil di dalam tombol */
+.wa-icon {
+  width: 1em;
+  height: 1em;
+  vertical-align: -2px;
+  margin-right: 6px;
+}
+
+/* ==========================================================================
+   MENU ALTERNATIF (PLAN B)
+   ========================================================================== */
+.alt-container {
+  margin-top: 56px;
+  padding-top: 56px;
+  border-top: 2px dashed var(--primary-light);
+}
+
+.alt-head {
+  text-align: center;
+  max-width: 620px;
+  margin: 0 auto 28px;
+}
+
+.alt-title {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.alt-desc {
+  color: var(--gray);
+}
+
+.alt-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  max-width: 900px;
+  margin-inline: auto;
+}
+
+/* Kartu alternatif: horizontal kecil */
+.alt-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px;
+}
+
+.alt-img {
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.alt-img.img-placeholder {
+  object-fit: contain;
+}
+
+.alt-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.alt-name {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.alt-price {
+  color: var(--primary-dark);
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.alt-btn {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 4px;
+  background: var(--accent);
+  color: var(--dark);
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 7px 16px;
+  border-radius: 999px;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.alt-btn:hover {
+  background: var(--accent-dark);
+  transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   KARTU ANGGOTA
+   ========================================================================== */
+.grid-team {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.team-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  text-align: center;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.section-alt .team-card {
+  border: 1px solid var(--primary-light);
+}
+
+.team-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-hover);
+}
+
+/* Foto anggota bulat penuh */
+.team-img {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 28px auto 0;
+  box-shadow: var(--shadow);
+}
+
+.team-img.img-placeholder {
+  object-fit: contain;
+  background: var(--primary-light);
+}
+
+.team-body {
+  padding: 16px 18px 22px;
+}
+
+.team-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+/* Role tampil sebagai badge kuning (pill) */
+.team-role {
+  display: inline-block;
+  background: var(--accent);
+  color: var(--dark);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 14px;
+  border-radius: 999px;
+}
+
+.team-kelas {
+  color: var(--gray);
+  font-size: 0.85rem;
+  margin: 10px 0 8px;
+}
+
+/* Instagram: ikon + @username sejajar horizontal */
+.team-ig {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.team-ig svg {
+  width: 16px;
+  height: 16px;
+}
+
+.team-ig:hover {
+  color: var(--primary-dark);
+}
+
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
+.footer {
+  background: var(--dark);
+  color: #e5e7eb;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1.2fr;
+  gap: 40px;
+  padding: 64px 0 40px;
+}
+
+.footer-logo {
+  font-size: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  background: var(--white);
+  border-radius: 14px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.footer-brand h3 {
+  color: var(--white);
+  font-size: 1.2rem;
+  margin-bottom: 6px;
+}
+
+.footer-brand p {
+  color: #9ca3af;
+  font-size: 0.9rem;
+}
+
+.footer-links h4,
+.footer-contact h4 {
+  color: var(--white);
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+}
+
+.footer-links a {
+  display: block;
+  color: #9ca3af;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  transition: color 0.2s ease;
+}
+
+.footer-links a:hover {
+  color: var(--primary);
+}
+
+.footer-contact p {
+  color: #9ca3af;
+  font-size: 0.9rem;
+}
+
+.footer-bottom {
+  border-top: 1px solid #3f3f46;
+  padding: 18px 0;
+}
+
+.footer-bottom p {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.85rem;
+}
+
+/* ==========================================================================
+   RESPONSIF (mobile & tablet)
+   ========================================================================== */
+@media (max-width: 900px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    padding: 130px 0 60px;
+  }
+
+  .why-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .alt-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-content {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hamburger {
+    display: flex;
+  }
+
+  .nav-menu {
+    position: absolute;
+    top: 100%;
+    inset-inline: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    background: #0e0e11;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 16px;
+    transform: translateY(-130%);
+    transition: transform 0.3s ease;
+  }
+
+  .nav-menu.open {
+    transform: translateY(0);
+  }
+
+  .nav-link {
+    padding: 12px 0;
+  }
+
+  .insta-icon {
+    align-self: flex-start;
+    margin-top: 12px;
+  }
+
+  .features-row {
+    gap: 14px;
+    padding: 18px;
+  }
+
+  .feature-card {
+    flex: 1 1 42%;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand-name {
+    font-size: 1.05rem;
+  }
+
+  .hero-title {
+    font-size: 1.8rem;
+  }
+
+  .btn-hero {
+    width: 100%;
+    text-align: center;
+  }
+
+  .feature-card {
+    flex: 1 1 100%;
+  }
+}
