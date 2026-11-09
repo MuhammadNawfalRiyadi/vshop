@@ -12,8 +12,6 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("footer-copy-brand").textContent = SITE_CONFIG.brandName;
   document.getElementById("footer-logo").innerHTML = SITE_CONFIG.brandLogo;
   document.getElementById("footer-tagline").textContent = SITE_CONFIG.tagline;
-  document.getElementById("footer-contact-line").textContent =
-    "WhatsApp: " + formatNomor(SITE_CONFIG.whatsappNumber);
   document.getElementById("footer-year").textContent = new Date().getFullYear();
 
   // Link ikon Instagram di navbar, diambil dari data.js
@@ -81,14 +79,6 @@ function formatRupiah(angka) {
   return new Intl.NumberFormat("id-ID").format(angka);
 }
 
-// --- Format nomor WA agar mudah dibaca: 6281234567890 -> 0812-3456-7890 ---
-function formatNomor(nomor) {
-  var n = nomor.replace(/\D/g, "");
-  if (n.length === 12) return "08" + n.slice(2, 5) + "-" + n.slice(5, 9) + "-" + n.slice(9, 12);
-  if (n.length === 11) return "08" + n.slice(2, 5) + "-" + n.slice(5, 8) + "-" + n.slice(8, 11);
-  return n;
-}
-
 // --- Link pesan via WhatsApp ---
 function buatLinkWhatsApp(produk) {
   var pesan = "Halo " + SITE_CONFIG.brandName +
@@ -151,8 +141,8 @@ function setupFilterBar() {
       btn.classList.add("active");
       var hasil = kategori
         ? produkUtama.filter(function (p) {
-            return p.category === kategori;
-          })
+          return p.category === kategori;
+        })
         : produkUtama;
       renderProducts(hasil);
     });

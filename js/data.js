@@ -10,7 +10,7 @@
 const SITE_CONFIG = {
   brandName: "V-SHOP",           // Nama brand / toko
   brandLogo: '<img src="img/vshop.png" alt="Logo V-Shop">',  // Logo gambar (taruh file di folder img/)
-  tagline: "Menu lezat dan hemat untuk semua orang.",
+  tagline: "Jajanan Enak dan Murah Untuk Pembeli.",
 
   // Akun Instagram toko/kelompok untuk ikon Instagram di navbar.
   // Tulis username TANPA "@". Jika dikosongkan "", ikon menuju ke halaman utama Instagram.
@@ -127,21 +127,21 @@ const PRODUCTS = [
 const TEAM = [
   {
     name: "Kevin Kenrico",
-    role: "Admin Bandar",
+    role: "Admin",
     photo: "img/kevin.jpeg",
     instagram: "kenricok",
     kelas: "XII RPL 1",
   },
   {
     name: "Muhammad Nawfal Riyadi",
-    role: "Web Developer & Programmer",
+    role: "Software Engineer",
     photo: "img/nawfal.jpeg",
     instagram: "nawfalwkwkwk",
     kelas: "XII RPL 1",
   },
   {
     name: "Muhammad Rasya Noor Fajri",
-    role: "Backend Developer & Programmer",
+    role: "Software Engineer",
     photo: "img/rasya.jpeg",
     instagram: "syaa_nf11",
     kelas: "XII RPL 1",
@@ -155,7 +155,7 @@ const TEAM = [
   },
   {
     name: "Faaiz Ariiq Izzuddin",
-    role: "Anggota / Sales",
+    role: "Sales",
     photo: "img/ariq.jpeg",
     instagram: "fz.riiq.izzddn.",
     kelas: "XII RPL 1",
