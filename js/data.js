@@ -14,7 +14,7 @@ const SITE_CONFIG = {
 
   // Akun Instagram toko/kelompok untuk ikon Instagram di navbar.
   // Tulis username TANPA "@". Jika dikosongkan "", ikon menuju ke halaman utama Instagram.
-  groupInstagram: "vshop.pkk",
+  groupInstagram: "xii.rpl_1",
 
   // Nomor WhatsApp admin tujuan pesanan.
   // Format: kode negara tanpa "+" / tanpa "0". Contoh: 6281234567890
@@ -22,7 +22,7 @@ const SITE_CONFIG = {
 
   // Gambar khusus untuk halaman Beranda (taruh file-nya di folder img/, nama bebas).
   heroImage: "img/produk.png",     // gambar besar di sisi kanan hero
-  whyImage: "img/memasak.jpeg",    // gambar di section "Kenapa Harus ...?"
+  whyImage: "img/why.png",    // gambar di section "Kenapa Harus ...?"
 };
 
 // ----------------------------------------------------------------------------
@@ -35,87 +35,38 @@ const SITE_CONFIG = {
 const PRODUCTS = [
   {
     id: 1,
-    name: "Nasi Goreng Spesial",
-    category: "Makanan",
-    price: 15000,
-    image: "img/nasi-goreng.jpg",
-    desc: "Nasi goreng dengan topping ayam dan telur, gurih mantap.",
+    name: "Cireng Bentuk",
+    price: 1500,
+    image: "img/produk.png",
+    desc: "Cireng dengan beragam bentuk dan isi, bisa request bentuk.",
   },
   {
     id: 2,
-    name: "Ayam Geprek",
-    category: "Makanan",
-    price: 12000,
-    image: "img/ayam-geprek.jpg",
-    desc: "Ayam goreng krispi disiram sambal pedas yang nampol.",
+    name: "Bakso Goreng",
+    price: 1500,
+    image: "img/produk.png",
+    desc: "Bakso goreng, itu aja sih.",
   },
   {
     id: 3,
-    name: "Sate Ayam",
-    category: "Makanan",
-    price: 18000,
-    image: "img/sate-ayam.jpg",
-    desc: "Sate ayam empuk dengan bumbu kacang yang kaya rasa.",
+    name: "Cireng Ayam",
+    price: 1500,
+    image: "img/produk.png",
+    desc: "Cireng isi suwir ayam.",
   },
   {
     id: 4,
-    name: "Bakso Sapi",
-    category: "Makanan",
-    price: 13000,
-    image: "img/bakso-sapi.jpg",
-    desc: "Bakso sapi kenyal dengan kuah kaldu yang hangat.",
+    name: "Otak-Otak",
+    price: 1500,
+    image: "img/produk.png",
+    desc: "Otak-otak putih goreng, itu aja sih.",
   },
   {
     id: 5,
-    name: "Es Teh Manis",
-    category: "Minuman",
-    price: 5000,
-    image: "img/es-teh.jpg",
-    desc: "Teh manis dingin yang menyegarkan setiap tegukan.",
-  },
-  {
-    id: 6,
-    name: "Es Jeruk Segar",
-    category: "Minuman",
-    price: 7000,
-    image: "img/es-jeruk.jpg",
-    desc: "Perasan jeruk asli dengan rasa asam manis segar.",
-  },
-  {
-    id: 7,
-    name: "Cappuccino",
-    category: "Minuman",
-    price: 10000,
-    image: "img/cappuccino.jpg",
-    desc: "Kopi lembut dengan buih susu yang creamy.",
-  },
-  {
-    id: 8,
-    name: "Jus Alpukat",
-    category: "Minuman",
-    price: 9000,
-    image: "img/jus-alpukat.jpg",
-    desc: "Jus alpukat kental manis, nikmat dan mengenyangkan.",
-  },
-  // Produk dengan isAlternatif: true masuk ke section "Menu Alternatif (Plan B)",
-  // dirender sebagai kartu kecil horizontal di bawah grid produk utama.
-  {
-    id: 9,
-    name: "Kentang Goreng",
-    category: "Makanan",
-    price: 10000,
-    image: "img/kentang-goreng.jpg",
-    desc: "Kentang goreng renyah dengan taburan garam dan bumbu.",
-    isAlternatif: true,
-  },
-  {
-    id: 10,
-    name: "Es Kopi Susu",
-    category: "Minuman",
-    price: 12000,
-    image: "img/es-kopi-susu.jpg",
-    desc: "Es kopi susu kekinian yang creamy dan segar.",
-    isAlternatif: true,
+    name: "Cireng Krispi",
+    price: 1500,
+    image: "img/produk.png",
+    desc: "Cireng krispi di luar lembut di dalam.",
   },
 ];
 

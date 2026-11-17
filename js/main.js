@@ -41,9 +41,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // --- HANYA di produk.html: filter + grid produk utama + menu alternatif ---
   if (document.getElementById("product-grid")) {
-    setupFilterBar();
     renderProducts(PRODUCTS);
-    renderAlternatif();
   }
 
   // --- HANYA di anggota.html: grid anggota kelompok ---
@@ -166,10 +164,6 @@ function renderProducts(daftar) {
     img.loading = "lazy";
     pasangJagaGambar(img, produk.name);
 
-    var badge = document.createElement("span");
-    badge.className = "product-category";
-    badge.textContent = produk.category;
-
     var body = document.createElement("div");
     body.className = "product-body";
 
@@ -188,19 +182,19 @@ function renderProducts(daftar) {
       deskripsi.textContent = produk.desc;
     }
 
-    var btn = document.createElement("a");
+    var btn = document.createElement("button");
     btn.className = "btn btn-primary btn-order";
-    btn.href = buatLinkWhatsApp(produk);
-    btn.target = "_blank";
-    btn.rel = "noopener";
+    btn.type = "button";
     btn.innerHTML = ikonWA() + " Pesan Sekarang";
+    btn.addEventListener("click", function () {
+      bukaModalPesan(produk);
+    });
 
     body.appendChild(nama);
     body.appendChild(harga);
     if (deskripsi) body.appendChild(deskripsi);
     body.appendChild(btn);
     card.appendChild(img);
-    card.appendChild(badge);
     card.appendChild(body);
     grid.appendChild(card);
   });
@@ -249,12 +243,13 @@ function renderAlternatif() {
     harga.className = "alt-price";
     harga.textContent = "Rp " + formatRupiah(produk.price);
 
-    var btn = document.createElement("a");
+    var btn = document.createElement("button");
     btn.className = "alt-btn";
-    btn.href = buatLinkWhatsApp(produk);
-    btn.target = "_blank";
-    btn.rel = "noopener";
+    btn.type = "button";
     btn.innerHTML = ikonWA() + " Pesan Sekarang";
+    btn.addEventListener("click", function () {
+      bukaModalPesan(produk);
+    });
 
     body.appendChild(nama);
     body.appendChild(harga);
@@ -350,4 +345,341 @@ function setupNavigation() {
   window.addEventListener("scroll", function () {
     navbar.classList.toggle("scrolled", window.scrollY > 30);
   });
+}
+
+// ============================================================================
+// MODAL FORM PEMESANAN
+// ============================================================================
+
+var _orderBackdrop = null;
+
+function bukaModalPesan(produk) {
+  tutupModalPesan();
+
+  var backdrop = document.createElement("div");
+  backdrop.className = "order-backdrop";
+  backdrop.addEventListener("click", function (e) {
+    if (e.target === backdrop) tutupModalPesan();
+  });
+
+  var card = document.createElement("div");
+  card.className = "order-card";
+
+  // --- Header ---
+  var header = document.createElement("div");
+  header.className = "order-header";
+
+  var title = document.createElement("h3");
+  title.className = "order-title";
+  title.textContent = "\uD83D\uDED2 Form Pemesanan";
+
+  var closeBtn = document.createElement("button");
+  closeBtn.className = "order-close";
+  closeBtn.type = "button";
+  closeBtn.textContent = "\u2715";
+  closeBtn.setAttribute("aria-label", "Tutup");
+  closeBtn.addEventListener("click", tutupModalPesan);
+
+  header.appendChild(title);
+  header.appendChild(closeBtn);
+
+  // --- Body ---
+  var body = document.createElement("div");
+  body.className = "order-body";
+
+  // Field 1: Nama Produk (disabled)
+  var field1 = _buatFieldDisabled("Nama Produk", produk.name);
+
+  // Field 2: Harga (disabled)
+  var field2 = _buatFieldDisabled("Harga", "Rp " + formatRupiah(produk.price));
+
+  // Field: Atas Nama
+  var fieldNama = document.createElement("div");
+  fieldNama.className = "order-field";
+
+  var labelNama = document.createElement("label");
+  labelNama.textContent = "Atas Nama";
+
+  var inputNama = document.createElement("input");
+  inputNama.className = "order-input";
+  inputNama.type = "text";
+  inputNama.placeholder = "Contoh: Budi";
+  inputNama.id = "order-nama";
+  inputNama.maxLength = 100;
+
+  var errorNama = document.createElement("span");
+  errorNama.className = "order-error";
+  errorNama.id = "order-nama-error";
+
+  inputNama.addEventListener("input", function () {
+    _validasiFormPesan();
+  });
+
+  fieldNama.appendChild(labelNama);
+  fieldNama.appendChild(inputNama);
+  fieldNama.appendChild(errorNama);
+
+  // Field 3: Quantity
+  var field3 = document.createElement("div");
+  field3.className = "order-field";
+
+  var label3 = document.createElement("label");
+  label3.textContent = "Jumlah";
+
+  var input3 = document.createElement("input");
+  input3.className = "order-input";
+  input3.type = "text";
+  input3.inputMode = "numeric";
+  input3.placeholder = "Masukkan jumlah pesanan";
+  input3.id = "order-qty";
+
+  var error3 = document.createElement("span");
+  error3.className = "order-error";
+  error3.id = "order-qty-error";
+
+  input3.addEventListener("input", function () {
+    this.value = this.value.replace(/[^0-9]/g, "");
+    _validasiFormPesan();
+  });
+
+  field3.appendChild(label3);
+  field3.appendChild(input3);
+  field3.appendChild(error3);
+
+  // Field 4: Metode Pembayaran (radio)
+  var field4 = document.createElement("div");
+  field4.className = "order-field";
+
+  var label4 = document.createElement("label");
+  label4.textContent = "Metode Pembayaran";
+
+  var radioGroup = document.createElement("div");
+  radioGroup.className = "order-radio-group";
+
+  ["TUNAI", "QRIS"].forEach(function (method) {
+    var radioLabel = document.createElement("label");
+    radioLabel.className = "order-radio-label";
+
+    var radio = document.createElement("input");
+    radio.type = "radio";
+    radio.name = "order-payment";
+    radio.value = method;
+    radio.addEventListener("change", function () {
+      radioGroup.querySelectorAll(".order-radio-label").forEach(function (l) {
+        l.classList.remove("selected");
+      });
+      radioLabel.classList.add("selected");
+      _validasiFormPesan();
+    });
+
+    radioLabel.appendChild(radio);
+    radioLabel.appendChild(document.createTextNode(" " + method));
+    radioGroup.appendChild(radioLabel);
+  });
+
+  field4.appendChild(label4);
+  field4.appendChild(radioGroup);
+
+  // Field 5: Note (opsional)
+  var field5 = document.createElement("div");
+  field5.className = "order-field";
+
+  var label5 = document.createElement("label");
+  var labelMainText = document.createTextNode("Catatan ");
+  var labelHint = document.createElement("span");
+  labelHint.className = "order-hint";
+  labelHint.textContent = "(opsional)";
+  label5.appendChild(labelMainText);
+  label5.appendChild(labelHint);
+
+  var textarea = document.createElement("textarea");
+  textarea.className = "order-textarea";
+  textarea.id = "order-note";
+  textarea.placeholder = "Contoh: Pesan rasa ayam, Minta saus pedas extra";
+  textarea.maxLength = 500;
+
+  var charcount = document.createElement("span");
+  charcount.className = "order-charcount";
+  charcount.textContent = "0 / 500";
+
+  textarea.addEventListener("input", function () {
+    charcount.textContent = this.value.length + " / 500";
+  });
+
+  field5.appendChild(label5);
+  field5.appendChild(textarea);
+  field5.appendChild(charcount);
+
+  body.appendChild(field1);
+  body.appendChild(field2);
+  body.appendChild(fieldNama);
+  body.appendChild(field3);
+  body.appendChild(field4);
+  body.appendChild(field5);
+
+  // --- Actions ---
+  var actions = document.createElement("div");
+  actions.className = "order-actions";
+
+  var cancelBtn = document.createElement("button");
+  cancelBtn.className = "order-btn order-btn-cancel";
+  cancelBtn.type = "button";
+  cancelBtn.textContent = "Batal";
+  cancelBtn.addEventListener("click", tutupModalPesan);
+
+  var submitBtn = document.createElement("button");
+  submitBtn.className = "order-btn order-btn-submit";
+  submitBtn.type = "button";
+  submitBtn.id = "order-submit";
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Pesan";
+  submitBtn.addEventListener("click", function () {
+    _kirimPesanan(produk);
+  });
+
+  actions.appendChild(cancelBtn);
+  actions.appendChild(submitBtn);
+
+  card.appendChild(header);
+  card.appendChild(body);
+  card.appendChild(actions);
+  backdrop.appendChild(card);
+  document.body.appendChild(backdrop);
+
+  _orderBackdrop = backdrop;
+  document.body.classList.add("modal-open");
+
+  requestAnimationFrame(function () {
+    backdrop.classList.add("active");
+  });
+
+  document.addEventListener("keydown", _handleOrderEscape);
+  input3.focus();
+}
+
+function _buatFieldDisabled(labelText, value) {
+  var field = document.createElement("div");
+  field.className = "order-field";
+  var label = document.createElement("label");
+  label.textContent = labelText;
+  var input = document.createElement("input");
+  input.className = "order-input";
+  input.type = "text";
+  input.value = value;
+  input.disabled = true;
+  field.appendChild(label);
+  field.appendChild(input);
+  return field;
+}
+
+function tutupModalPesan() {
+  if (!_orderBackdrop) return;
+  _orderBackdrop.classList.remove("active");
+  document.body.classList.remove("modal-open");
+  document.removeEventListener("keydown", _handleOrderEscape);
+  var bg = _orderBackdrop;
+  _orderBackdrop = null;
+  setTimeout(function () {
+    if (bg && bg.parentNode) bg.parentNode.removeChild(bg);
+  }, 200);
+}
+
+function _handleOrderEscape(e) {
+  if (e.key === "Escape") tutupModalPesan();
+}
+
+function _validasiFormPesan() {
+  var qtyInput = document.getElementById("order-qty");
+  var qtyError = document.getElementById("order-qty-error");
+  var namaInput = document.getElementById("order-nama");
+  var namaError = document.getElementById("order-nama-error");
+  var submitBtn = document.getElementById("order-submit");
+  if (!qtyInput || !submitBtn) return;
+
+  var qty = qtyInput.value;
+  var namaVal = (namaInput ? namaInput.value : "").replace(/<[^>]*>/g, "").trim();
+  var payment = document.querySelector("input[name=\"order-payment\"]:checked");
+  var valid = true;
+
+  if (!namaVal) {
+    if (namaInput) namaInput.classList.remove("error");
+    if (namaError) namaError.classList.remove("show");
+    valid = false;
+  } else if (namaVal.length < 2) {
+    if (namaInput) namaInput.classList.add("error");
+    if (namaError) {
+      namaError.textContent = "Nama minimal 2 karakter";
+      namaError.classList.add("show");
+    }
+    valid = false;
+  } else {
+    if (namaInput) namaInput.classList.remove("error");
+    if (namaError) namaError.classList.remove("show");
+  }
+
+  if (qty === "") {
+    qtyInput.classList.remove("error");
+    qtyError.classList.remove("show");
+    valid = false;
+  } else {
+    var qtyNum = parseInt(qty, 10);
+    if (isNaN(qtyNum) || qtyNum < 1) {
+      qtyInput.classList.add("error");
+      qtyError.textContent = "Jumlah harus minimal 1";
+      qtyError.classList.add("show");
+      valid = false;
+    } else if (qtyNum > 999) {
+      qtyInput.classList.add("error");
+      qtyError.textContent = "Jumlah maksimal 999";
+      qtyError.classList.add("show");
+      valid = false;
+    } else {
+      qtyInput.classList.remove("error");
+      qtyError.classList.remove("show");
+    }
+  }
+
+  if (!payment) valid = false;
+
+  if (valid) {
+    submitBtn.disabled = false;
+    submitBtn.classList.add("enabled");
+  } else {
+    submitBtn.disabled = true;
+    submitBtn.classList.remove("enabled");
+  }
+}
+
+function _sanitizeNote(input) {
+  var clean = input.replace(/<[^>]*>/g, "");
+  clean = clean.trim();
+  if (clean.length > 500) clean = clean.substring(0, 500);
+  return clean;
+}
+
+function _kirimPesanan(produk) {
+  var qty = parseInt(document.getElementById("order-qty").value, 10);
+  var payment = document.querySelector("input[name=\"order-payment\"]:checked").value;
+  var note = _sanitizeNote(document.getElementById("order-note").value);
+  var nama = _sanitizeNote(document.getElementById("order-nama").value);
+  var total = produk.price * qty;
+
+  var pesan = "Halo " + SITE_CONFIG.brandName + "! Saya mau pesan:\n\n" +
+    "\uD83D\uDC64 Atas Nama: " + nama + "\n" +
+    "\uD83D\uDCE6 Produk: " + produk.name + "\n" +
+    "\uD83D\uDCB0 Harga: Rp " + formatRupiah(produk.price) + "\n" +
+    "\uD83D\uDD22 Jumlah: " + qty + "\n" +
+    "\uD83D\uDCB3 Pembayaran: " + payment + "\n";
+
+  if (note) {
+    pesan += "\uD83D\uDCDD Catatan: " + note + "\n";
+  }
+
+  pesan += "\nTotal: Rp " + formatRupiah(total);
+
+  var url = "https://wa.me/" + SITE_CONFIG.whatsappNumber +
+    "?text=" + encodeURIComponent(pesan);
+
+  window.open(url, "_blank", "noopener");
+  tutupModalPesan();
 }
