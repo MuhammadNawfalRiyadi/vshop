@@ -371,7 +371,7 @@ function bukaModalPesan(produk) {
 
   var title = document.createElement("h3");
   title.className = "order-title";
-  title.textContent = "\uD83D\uDED2 Form Pemesanan";
+  title.textContent = "Form Pemesanan";
 
   var closeBtn = document.createElement("button");
   closeBtn.className = "order-close";
