@@ -399,7 +399,7 @@ function buatOrderModal() {
     '<div class="order-card">' +
 
     '<div class="order-header">' +
-    '<h2 class="order-title" id="order-modal-title">🛒 Konfirmasi Pesanan</h2>' +
+    '<h2 class="order-title" id="order-modal-title"> Konfirmasi Pesanan</h2>' +
     '<button class="order-close" id="order-close" type="button" aria-label="Tutup form">✕</button>' +
     '</div>' +
 
