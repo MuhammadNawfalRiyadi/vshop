@@ -2,6 +2,17 @@
 // LOGIKA WEBSITE — Umumnya tidak perlu diedit, cukup edit js/data.js.
 // File ini dipakai bersama oleh index.html, produk.html, dan anggota.html.
 // Setiap fungsi hanya dijalankan jika elemen targetnya ada di halaman itu.
+//
+// STRUKTUR MODUL (urutan deklarasi):
+//   1. Bootstrap (DOMContentLoaded)
+//   2. Navbar
+//   3. Format & Link
+//   4. Keranjang (Cart State)
+//   5. Produk (render kartu)
+//   6. Cart Bar (panel bawah)
+//   7. Order Modal (form konfirmasi pesanan)  ← fitur baru
+//   8. Anggota
+//   9. Navigasi mobile
 // ============================================================================
 
 // --- Nama brand, logo, footer & menu aktif dipasang otomatis dari data.js ---
@@ -77,7 +88,7 @@ function formatRupiah(angka) {
   return new Intl.NumberFormat("id-ID").format(angka);
 }
 
-// --- Link pesan via WhatsApp ---
+// --- Link pesan via WhatsApp (single product, legacy, tidak dipakai lagi) ---
 function buatLinkWhatsApp(produk) {
   var pesan = "Halo " + SITE_CONFIG.brandName +
     "! Saya mau pesan *" + produk.name + "* seharga Rp " +
@@ -107,53 +118,77 @@ function pasangJagaGambar(img, nama) {
 }
 
 // ============================================================================
-// PRODUK
+// KERANJANG (CART)
 // ============================================================================
 
-// --- Tombol filter kategori dibuat otomatis dari data produk ---
-function setupFilterBar() {
-  var produkUtama = PRODUCTS;
+var _cart = {}; // { produkId: { produk, qty } }
 
-  var daftarKategori = [];
-  produkUtama.forEach(function (p) {
-    if (daftarKategori.indexOf(p.category) === -1) daftarKategori.push(p.category);
-  });
+function getCartItems() {
+  return Object.values(_cart).filter(function (item) { return item.qty > 0; });
+}
 
-  var bar = document.getElementById("filter-bar");
-  // Tombol "Semua" + satu tombol per kategori
-  var tombolSemua = buatTombolFilter("Semua", null, true);
-  bar.appendChild(tombolSemua);
+function getTotalItems() {
+  return getCartItems().reduce(function (sum, item) { return sum + item.qty; }, 0);
+}
 
-  daftarKategori.forEach(function (kategori) {
-    bar.appendChild(buatTombolFilter(kategori, kategori, false));
-  });
+function getTotalHarga() {
+  return getCartItems().reduce(function (sum, item) { return sum + item.produk.price * item.qty; }, 0);
+}
 
-  function buatTombolFilter(label, kategori, aktif) {
-    var btn = document.createElement("button");
-    btn.className = "filter-btn" + (aktif ? " active" : "");
-    btn.textContent = label;
-    btn.addEventListener("click", function () {
-      document.querySelectorAll(".filter-btn").forEach(function (b) {
-        b.classList.remove("active");
-      });
-      btn.classList.add("active");
-      var hasil = kategori
-        ? produkUtama.filter(function (p) {
-          return p.category === kategori;
-        })
-        : produkUtama;
-      renderProducts(hasil);
-    });
-    return btn;
+function ubahQty(produkId, delta) {
+  if (!_cart[produkId]) return;
+  var newQty = _cart[produkId].qty + delta;
+  if (newQty < 0) newQty = 0;
+  if (newQty > 99) newQty = 99;
+  _cart[produkId].qty = newQty;
+  updateQtyDisplay(produkId);
+  updateCartBar();
+}
+
+function setQtyDirect(produkId, val) {
+  if (!_cart[produkId]) return;
+  var str = String(val).replace(/[^0-9]/g, "");
+  var num = parseInt(str, 10);
+  if (isNaN(num) || num < 0) num = 0;
+  if (num > 99) num = 99;
+  _cart[produkId].qty = num;
+  updateQtyDisplay(produkId);
+  updateCartBar();
+}
+
+function updateQtyDisplay(produkId) {
+  var display = document.getElementById("qty-display-" + produkId);
+  var minusBtn = document.getElementById("qty-minus-" + produkId);
+  var plusBtn = document.getElementById("qty-plus-" + produkId);
+  if (!display) return;
+  var qty = _cart[produkId] ? _cart[produkId].qty : 0;
+  display.textContent = qty;
+  if (minusBtn) minusBtn.disabled = qty <= 0;
+  if (plusBtn) plusBtn.disabled = qty >= 99;
+
+  var wrapper = document.getElementById("qty-wrapper-" + produkId);
+  if (wrapper) {
+    if (qty > 0) {
+      wrapper.classList.add("has-qty");
+    } else {
+      wrapper.classList.remove("has-qty");
+    }
   }
 }
 
-// --- Render kartu produk ke dalam grid ---
+// ============================================================================
+// PRODUK
+// ============================================================================
+
 function renderProducts(daftar) {
   var grid = document.getElementById("product-grid");
   grid.innerHTML = "";
 
   daftar.forEach(function (produk) {
+    if (!_cart[produk.id]) {
+      _cart[produk.id] = { produk: produk, qty: 0 };
+    }
+
     var card = document.createElement("div");
     card.className = "product-card";
 
@@ -175,90 +210,554 @@ function renderProducts(daftar) {
     harga.className = "product-price";
     harga.textContent = "Rp " + formatRupiah(produk.price);
 
-    var deskripsi;
     if (produk.desc) {
-      deskripsi = document.createElement("p");
+      var deskripsi = document.createElement("p");
       deskripsi.className = "product-desc";
       deskripsi.textContent = produk.desc;
+      body.appendChild(deskripsi);
     }
 
-    var btn = document.createElement("button");
-    btn.className = "btn btn-primary btn-order";
-    btn.type = "button";
-    btn.innerHTML = ikonWA() + " Pesan Sekarang";
-    btn.addEventListener("click", function () {
-      bukaModalPesan(produk);
-    });
+    var qtyWrapper = document.createElement("div");
+    qtyWrapper.className = "qty-wrapper";
+    qtyWrapper.id = "qty-wrapper-" + produk.id;
 
-    body.appendChild(nama);
-    body.appendChild(harga);
-    if (deskripsi) body.appendChild(deskripsi);
-    body.appendChild(btn);
+    var minusBtn = document.createElement("button");
+    minusBtn.className = "qty-btn qty-minus";
+    minusBtn.id = "qty-minus-" + produk.id;
+    minusBtn.type = "button";
+    minusBtn.textContent = "-";
+    minusBtn.setAttribute("aria-label", "Kurangi " + produk.name);
+    minusBtn.disabled = true;
+    (function (id) {
+      minusBtn.addEventListener("click", function () { ubahQty(id, -1); });
+    })(produk.id);
+
+    var display = document.createElement("span");
+    display.className = "qty-display";
+    display.id = "qty-display-" + produk.id;
+    display.textContent = "0";
+
+    var plusBtn = document.createElement("button");
+    plusBtn.className = "qty-btn qty-plus";
+    plusBtn.id = "qty-plus-" + produk.id;
+    plusBtn.type = "button";
+    plusBtn.textContent = "+";
+    plusBtn.setAttribute("aria-label", "Tambah " + produk.name);
+    (function (id) {
+      plusBtn.addEventListener("click", function () { ubahQty(id, 1); });
+    })(produk.id);
+
+    qtyWrapper.appendChild(minusBtn);
+    qtyWrapper.appendChild(display);
+    qtyWrapper.appendChild(plusBtn);
+
+    body.insertBefore(nama, body.firstChild);
+    body.insertBefore(harga, nama.nextSibling);
+    body.appendChild(qtyWrapper);
     card.appendChild(img);
     card.appendChild(body);
     grid.appendChild(card);
   });
 }
 
-// --- Ikon WhatsApp kecil yang dipakai tombol "Pesan Sekarang" ---
-function ikonWA() {
-  return (
-    '<svg class="wa-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' +
-    '<path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.47-.89-.79-1.49-1.76-1.66-2.06-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.5 0 1.47 1.07 2.89 1.22 3.09.15.2 2.1 3.21 5.1 4.5.71.31 1.27.49 1.7.63.72.23 1.37.2 1.88.12.57-.09 1.76-.72 2.01-1.42.25-.7.25-1.29.17-1.42-.07-.13-.27-.2-.57-.35zM12.04 21.5h-.01a9.44 9.44 0 0 1-4.81-1.32l-.35-.2-3.57.94.95-3.48-.23-.36a9.42 9.42 0 0 1-1.45-5.04C2.57 6.28 6.81 2.03 12.05 2.03c2.57 0 4.98 1 6.8 2.82a9.55 9.55 0 0 1 2.82 6.8c0 5.24-4.25 9.5-9.48 9.5zm8.4-17.7A11.37 11.37 0 0 0 12.04 0C5.5 0 .18 5.32.18 11.87c0 2.09.55 4.13 1.59 5.93L.06 24l6.4-1.68a11.9 11.9 0 0 0 5.59 1.42h.01c6.55 0 11.87-5.32 11.87-11.87 0-3.17-1.24-6.16-3.48-8.4z"/>' +
-    "</svg>"
-  );
+// ============================================================================
+// CART BAR (panel bawah seperti bottom navbar)
+// ============================================================================
+
+function buatCartBar() {
+  if (document.getElementById("cart-bar")) return;
+
+  var bar = document.createElement("div");
+  bar.id = "cart-bar";
+  bar.className = "cart-bar";
+  bar.setAttribute("aria-live", "polite");
+  bar.setAttribute("aria-label", "Keranjang pesanan");
+
+  var inner = document.createElement("div");
+  inner.className = "cart-bar-inner container";
+
+  var itemsRow = document.createElement("div");
+  itemsRow.className = "cart-items-row";
+  itemsRow.id = "cart-items-row";
+
+  var actions = document.createElement("div");
+  actions.className = "cart-actions";
+
+  var totalEl = document.createElement("span");
+  totalEl.className = "cart-total";
+  totalEl.id = "cart-total";
+
+  var pesanBtn = document.createElement("button");
+  pesanBtn.className = "cart-pesan-btn";
+  pesanBtn.type = "button";
+  pesanBtn.id = "cart-pesan-btn";
+  pesanBtn.textContent = "Pesan via WhatsApp";
+  pesanBtn.addEventListener("click", bukaOrderModal);
+
+  actions.appendChild(totalEl);
+  actions.appendChild(pesanBtn);
+
+  inner.appendChild(itemsRow);
+  inner.appendChild(actions);
+  bar.appendChild(inner);
+  document.body.appendChild(bar);
+}
+
+function updateCartBar() {
+  buatCartBar();
+
+  var bar = document.getElementById("cart-bar");
+  var itemsRow = document.getElementById("cart-items-row");
+  var totalEl = document.getElementById("cart-total");
+  if (!bar || !itemsRow || !totalEl) return;
+
+  var items = getCartItems();
+
+  if (items.length === 0) {
+    bar.classList.remove("cart-bar-visible");
+    document.body.classList.remove("cart-bar-visible");
+    return;
+  }
+
+  bar.classList.add("cart-bar-visible");
+  document.body.classList.add("cart-bar-visible");
+
+  itemsRow.innerHTML = "";
+  items.forEach(function (item) {
+    var chip = document.createElement("span");
+    chip.className = "cart-chip";
+    chip.textContent = item.produk.name + " " + item.qty + "x";
+    itemsRow.appendChild(chip);
+  });
+
+  var total = getTotalHarga();
+  totalEl.textContent = "Rp " + formatRupiah(total);
+}
+
+function kirimPesananCart() {
+  var items = getCartItems();
+  if (items.length === 0) return;
+
+  var baris = items.map(function (item) {
+    return item.produk.name + " " + item.qty + "x" +
+      " (Rp " + formatRupiah(item.produk.price) + "/pcs)";
+  });
+
+  var total = getTotalHarga();
+
+  var pesan = "Halo " + SITE_CONFIG.brandName + "! Saya mau pesan:\n\n" +
+    baris.join("\n") +
+    "\n\nTotal: Rp " + formatRupiah(total);
+
+  var url = "https://wa.me/" + SITE_CONFIG.whatsappNumber +
+    "?text=" + encodeURIComponent(pesan);
+
+  window.open(url, "_blank", "noopener");
 }
 
 // ============================================================================
-// MENU ALTERNATIF (PLAN B)
+// ORDER MODAL — Form konfirmasi pesanan sebelum dikirim ke WhatsApp
 // ============================================================================
-// Produk dengan isAlternatif: true dirender sebagai kartu kecil horizontal.
-function renderAlternatif() {
-  var grid = document.getElementById("alt-grid");
-  grid.innerHTML = "";
+//
+// Arsitektur modul ini dibagi menjadi 4 lapisan:
+//
+//   [A] DOM Builder  — buatOrderModal()
+//       Inject elemen modal ke <body> sekali saja (pola sama dengan buatCartBar).
+//       Tidak ada logika bisnis di sini, hanya konstruksi elemen.
+//
+//   [B] Lifecycle    — bukaOrderModal(), tutupOrderModal()
+//       Mengatur state tampil/sembunyi modal, render ulang ringkasan,
+//       reset form, dan kunci scroll body.
+//
+//   [C] Field Logic  — toggleFieldAlamat(), updateStatusTombolKirim()
+//       Reactive: dipanggil setiap kali radio berubah.
+//       Menampilkan/menyembunyikan field alamat dan mengaktifkan tombol kirim.
+//
+//   [D] Validasi & Submit — validasiForm(), submitPesanan()
+//       Validasi semua field wajib sebelum membangun pesan WA.
+//       submitPesanan() hanya dipanggil setelah validasiForm() lulus.
+//
+// ----------------------------------------------------------------------------
 
-  var daftar = PRODUCTS.filter(function (p) {
-    return p.isAlternatif;
+// --- [A] DOM Builder ---
+
+function buatOrderModal() {
+  if (document.getElementById("order-backdrop")) return;
+
+  var backdrop = document.createElement("div");
+  backdrop.id = "order-backdrop";
+  backdrop.className = "order-backdrop";
+  backdrop.setAttribute("role", "dialog");
+  backdrop.setAttribute("aria-modal", "true");
+  backdrop.setAttribute("aria-labelledby", "order-modal-title");
+
+  backdrop.addEventListener("click", function (e) {
+    if (e.target === backdrop) tutupOrderModal();
   });
 
-  daftar.forEach(function (produk) {
-    var card = document.createElement("div");
-    card.className = "alt-card";
+  backdrop.innerHTML =
+    '<div class="order-card">' +
 
-    var img = document.createElement("img");
-    img.className = "alt-img";
-    img.src = produk.image;
-    img.alt = produk.name;
-    img.loading = "lazy";
-    pasangJagaGambar(img, produk.name);
+    '<div class="order-header">' +
+    '<h2 class="order-title" id="order-modal-title">🛒 Konfirmasi Pesanan</h2>' +
+    '<button class="order-close" id="order-close" type="button" aria-label="Tutup form">✕</button>' +
+    '</div>' +
 
-    var body = document.createElement("div");
-    body.className = "alt-body";
+    '<div class="order-body">' +
 
-    var nama = document.createElement("h3");
-    nama.className = "alt-name";
-    nama.textContent = produk.name;
+    '<div class="order-ringkasan" id="order-ringkasan"></div>' +
 
-    var harga = document.createElement("p");
-    harga.className = "alt-price";
-    harga.textContent = "Rp " + formatRupiah(produk.price);
+    '<div class="order-field">' +
+    '<label for="order-nama">Atas Nama <span style="color:#ef4444">*</span></label>' +
+    '<input class="order-input" id="order-nama" type="text" maxlength="60"' +
+    ' placeholder="Nama pemesan" autocomplete="name" />' +
+    '<span class="order-error" id="order-nama-err">Nama wajib diisi.</span>' +
+    '</div>' +
 
-    var btn = document.createElement("button");
-    btn.className = "alt-btn";
-    btn.type = "button";
-    btn.innerHTML = ikonWA() + " Pesan Sekarang";
-    btn.addEventListener("click", function () {
-      bukaModalPesan(produk);
+    '<div class="order-field">' +
+    '<label>Metode Pembayaran <span style="color:#ef4444">*</span></label>' +
+    '<div class="order-radio-group" id="order-bayar-group">' +
+    '<label class="order-radio-label" id="label-tunai">' +
+    '<input type="radio" name="order-bayar" value="Tunai" /> Tunai' +
+    '</label>' +
+    '<label class="order-radio-label" id="label-qris">' +
+    '<input type="radio" name="order-bayar" value="QRIS" /> QRIS' +
+    '</label>' +
+    '</div>' +
+    '<span class="order-error" id="order-bayar-err">Pilih metode pembayaran.</span>' +
+    '</div>' +
+
+    '<div class="order-field">' +
+    '<label>Opsi Pengambilan <span style="color:#ef4444">*</span></label>' +
+    '<div class="order-radio-group" id="order-ambil-group">' +
+    '<label class="order-radio-label" id="label-smk">' +
+    '<input type="radio" name="order-ambil" value="SMK Fatahillah Cileungsi" /> SMK Fatahillah' +
+    '</label>' +
+    '<label class="order-radio-label" id="label-antar">' +
+    '<input type="radio" name="order-ambil" value="Diantar ke Rumah" /> Diantar ke Rumah' +
+    '</label>' +
+    '</div>' +
+    '<span class="order-error" id="order-ambil-err">Pilih opsi pengambilan.</span>' +
+    '</div>' +
+
+    '<div class="order-field" id="order-field-alamat" style="display:none">' +
+    '<label for="order-alamat">' +
+    'Alamat Lengkap <span style="color:#ef4444">*</span>' +
+    '<span class="order-hint"> — dari kecamatan hingga nomor rumah</span>' +
+    '</label>' +
+    '<textarea class="order-textarea" id="order-alamat" rows="3"' +
+    ' placeholder="Contoh: Kec. Cileungsi, Kp. Narogong, Jl. Merdeka No. 10">' +
+    '</textarea>' +
+    '<span class="order-charcount" id="order-alamat-count">0 karakter</span>' +
+    '<span class="order-error" id="order-alamat-err">Alamat wajib diisi.</span>' +
+    '</div>' +
+
+    '<div class="order-field">' +
+    '<label for="order-catatan">Catatan <span class="order-hint">(opsional)</span></label>' +
+    '<textarea class="order-textarea" id="order-catatan" rows="2"' +
+    ' placeholder="Contoh: mau tambah kecap, jangan pedas, dll.">' +
+    '</textarea>' +
+    '</div>' +
+
+    '</div>' +
+
+    '<div class="order-actions">' +
+    '<button class="order-btn order-btn-cancel" id="order-btn-cancel" type="button">Batalkan</button>' +
+    '<button class="order-btn order-btn-submit" id="order-btn-submit" type="button">Kirim Pesanan →</button>' +
+    '</div>' +
+
+    '</div>';
+
+  document.body.appendChild(backdrop);
+
+  document.getElementById("order-close").addEventListener("click", tutupOrderModal);
+  document.getElementById("order-btn-cancel").addEventListener("click", tutupOrderModal);
+  document.getElementById("order-btn-submit").addEventListener("click", submitPesanan);
+
+  document.querySelectorAll("input[name='order-bayar']").forEach(function (radio) {
+    radio.addEventListener("change", function () {
+      pasangSelectedRadio("order-bayar-group");
+      updateStatusTombolKirim();
     });
-
-    body.appendChild(nama);
-    body.appendChild(harga);
-    body.appendChild(btn);
-
-    card.appendChild(img);
-    card.appendChild(body);
-    grid.appendChild(card);
   });
+
+  document.querySelectorAll("input[name='order-ambil']").forEach(function (radio) {
+    radio.addEventListener("change", function () {
+      pasangSelectedRadio("order-ambil-group");
+      toggleFieldAlamat();
+      updateStatusTombolKirim();
+    });
+  });
+
+  document.getElementById("order-nama").addEventListener("input", function () {
+    bersihkanError("order-nama");
+    updateStatusTombolKirim();
+  });
+
+  var textarea = document.getElementById("order-alamat");
+  textarea.addEventListener("input", function () {
+    document.getElementById("order-alamat-count").textContent =
+      textarea.value.length + " karakter";
+    bersihkanError("order-alamat");
+    updateStatusTombolKirim();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") tutupOrderModal();
+  });
+}
+
+// --- [B] Lifecycle ---
+
+function bukaOrderModal() {
+  if (getCartItems().length === 0) return;
+
+  buatOrderModal();
+  renderRingkasanModal();
+  resetFormModal();
+
+  var backdrop = document.getElementById("order-backdrop");
+  backdrop.classList.add("active");
+  document.body.classList.add("modal-open");
+
+  setTimeout(function () {
+    var inputNama = document.getElementById("order-nama");
+    if (inputNama) inputNama.focus();
+  }, 100);
+}
+
+function tutupOrderModal() {
+  var backdrop = document.getElementById("order-backdrop");
+  if (!backdrop) return;
+
+  backdrop.classList.remove("active");
+  document.body.classList.remove("modal-open");
+}
+
+function resetFormModal() {
+  var nama = document.getElementById("order-nama");
+  if (nama) nama.value = "";
+
+  document.querySelectorAll("input[name='order-bayar']").forEach(function (r) { r.checked = false; });
+  document.querySelectorAll("input[name='order-ambil']").forEach(function (r) { r.checked = false; });
+
+  document.querySelectorAll(".order-radio-label").forEach(function (lbl) {
+    lbl.classList.remove("selected");
+  });
+
+  var textarea = document.getElementById("order-alamat");
+  if (textarea) textarea.value = "";
+
+  var catatanField = document.getElementById("order-catatan");
+  if (catatanField) catatanField.value = "";
+
+  var count = document.getElementById("order-alamat-count");
+  if (count) count.textContent = "0 karakter";
+
+  document.querySelectorAll(".order-error").forEach(function (el) { el.classList.remove("show"); });
+  document.querySelectorAll(".order-input, .order-textarea").forEach(function (el) {
+    el.classList.remove("error");
+  });
+
+  toggleFieldAlamat();
+  updateStatusTombolKirim();
+}
+
+function renderRingkasanModal() {
+  var container = document.getElementById("order-ringkasan");
+  if (!container) return;
+
+  var items = getCartItems();
+  var total = getTotalHarga();
+
+  var html = '<div style="background:#fff8ee;border-radius:12px;padding:14px 16px;">';
+  html += '<ul style="list-style:none;display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">';
+
+  items.forEach(function (item) {
+    var subtotal = item.produk.price * item.qty;
+    html +=
+      '<li style="display:flex;justify-content:space-between;font-size:0.9rem;">' +
+      '<span>' + item.produk.name + ' <span style="color:#6b7280;">×' + item.qty + '</span></span>' +
+      '<span style="font-weight:600;">Rp ' + formatRupiah(subtotal) + '</span>' +
+      '</li>';
+  });
+
+  html += '</ul>';
+  html +=
+    '<div style="display:flex;justify-content:space-between;border-top:1px solid #e9d5b0;' +
+    'padding-top:10px;font-weight:800;font-size:1rem;">' +
+    '<span>Total</span>' +
+    '<span style="color:#e04e1a;">Rp ' + formatRupiah(total) + '</span>' +
+    '</div>';
+  html += '</div>';
+
+  container.innerHTML = html;
+}
+
+// --- [C] Field Logic ---
+
+function toggleFieldAlamat() {
+  var radioAntar = document.querySelector("input[name='order-ambil'][value='Diantar ke Rumah']");
+  var fieldAlamat = document.getElementById("order-field-alamat");
+  if (!fieldAlamat) return;
+
+  var perluAntar = radioAntar && radioAntar.checked;
+  fieldAlamat.style.display = perluAntar ? "block" : "none";
+
+  if (!perluAntar) {
+    var textarea = document.getElementById("order-alamat");
+    if (textarea) textarea.value = "";
+    bersihkanError("order-alamat");
+  }
+}
+
+function pasangSelectedRadio(groupId) {
+  var group = document.getElementById(groupId);
+  if (!group) return;
+  group.querySelectorAll(".order-radio-label").forEach(function (lbl) {
+    var radio = lbl.querySelector("input[type='radio']");
+    lbl.classList.toggle("selected", radio && radio.checked);
+  });
+}
+
+function updateStatusTombolKirim() {
+  var tombol = document.getElementById("order-btn-submit");
+  if (!tombol) return;
+
+  var nama = document.getElementById("order-nama");
+  var radioBayar = document.querySelector("input[name='order-bayar']:checked");
+  var radioAmbil = document.querySelector("input[name='order-ambil']:checked");
+  var textarea = document.getElementById("order-alamat");
+  var perluAntar = radioAmbil && radioAmbil.value === "Diantar ke Rumah";
+
+  var namaOk = nama && nama.value.trim().length > 0;
+  var bayarOk = !!radioBayar;
+  var ambilOk = !!radioAmbil;
+  var alamatOk = !perluAntar || (textarea && textarea.value.trim().length > 0);
+
+  var semuaOk = namaOk && bayarOk && ambilOk && alamatOk;
+  tombol.classList.toggle("enabled", semuaOk);
+}
+
+// --- [D] Validasi & Submit ---
+
+function bersihkanError(fieldId) {
+  var input = document.getElementById(fieldId);
+  var err = document.getElementById(fieldId + "-err");
+  if (input) input.classList.remove("error");
+  if (err) err.classList.remove("show");
+}
+
+function tampilkanError(fieldId, pesan) {
+  var input = document.getElementById(fieldId);
+  var err = document.getElementById(fieldId + "-err");
+  if (input) input.classList.add("error");
+  if (err) {
+    err.textContent = pesan || err.textContent;
+    err.classList.add("show");
+    input.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+}
+
+function validasiForm() {
+  var valid = true;
+
+  var nama = document.getElementById("order-nama");
+  if (!nama || nama.value.trim() === "") {
+    tampilkanError("order-nama", "Nama wajib diisi.");
+    if (valid) { valid = false; }
+  } else {
+    bersihkanError("order-nama");
+  }
+
+  var radioBayar = document.querySelector("input[name='order-bayar']:checked");
+  var errBayar = document.getElementById("order-bayar-err");
+  if (!radioBayar) {
+    if (errBayar) errBayar.classList.add("show");
+    if (valid) {
+      valid = false;
+      var grupBayar = document.getElementById("order-bayar-group");
+      if (grupBayar) grupBayar.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  } else {
+    if (errBayar) errBayar.classList.remove("show");
+  }
+
+  var radioAmbil = document.querySelector("input[name='order-ambil']:checked");
+  var errAmbil = document.getElementById("order-ambil-err");
+  if (!radioAmbil) {
+    if (errAmbil) errAmbil.classList.add("show");
+    if (valid) {
+      valid = false;
+      var grupAmbil = document.getElementById("order-ambil-group");
+      if (grupAmbil) grupAmbil.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  } else {
+    if (errAmbil) errAmbil.classList.remove("show");
+  }
+
+  var perluAntar = radioAmbil && radioAmbil.value === "Diantar ke Rumah";
+  if (perluAntar) {
+    var textarea = document.getElementById("order-alamat");
+    if (!textarea || textarea.value.trim() === "") {
+      tampilkanError("order-alamat", "Alamat wajib diisi jika memilih diantar ke rumah.");
+      valid = false;
+    } else {
+      bersihkanError("order-alamat");
+    }
+  }
+
+  return valid;
+}
+
+function submitPesanan() {
+  if (!validasiForm()) return;
+
+  var items = getCartItems();
+  if (items.length === 0) return;
+
+  var nama = document.getElementById("order-nama").value.trim();
+  var bayar = document.querySelector("input[name='order-bayar']:checked").value;
+  var ambil = document.querySelector("input[name='order-ambil']:checked").value;
+  var alamat = "";
+  var catatan = "";
+  if (ambil === "Diantar ke Rumah") {
+    alamat = document.getElementById("order-alamat").value.trim();
+  }
+  catatan = document.getElementById("order-catatan").value.trim();
+
+  var baris = items.map(function (item) {
+    return "• " + item.produk.name + " × " + item.qty +
+      " (Rp " + formatRupiah(item.produk.price) + "/pcs)";
+  });
+
+  var total = getTotalHarga();
+
+  var pesan =
+    "Halo " + SITE_CONFIG.brandName + "! Saya mau pesan:\n\n" +
+    baris.join("\n") +
+    "\n\nTotal       : Rp " + formatRupiah(total) +
+    "\n\nAtas Nama   : " + nama +
+    "\nPembayaran  : " + bayar +
+    "\nPengambilan : " + ambil +
+    (alamat ? "\nAlamat      : " + alamat : "") +
+    (catatan ? "\nCatatan     : " + catatan : "");
+
+  var url = "https://wa.me/" + SITE_CONFIG.whatsappNumber +
+    "?text=" + encodeURIComponent(pesan);
+
+  window.open(url, "_blank", "noopener");
+
+  tutupOrderModal();
+  resetCart();
+}
+
+function resetCart() {
+  Object.keys(_cart).forEach(function (id) {
+    _cart[id].qty = 0;
+    updateQtyDisplay(Number(id));
+  });
+  updateCartBar();
 }
 
 // ============================================================================
@@ -332,7 +831,6 @@ function setupNavigation() {
     navMenu.classList.toggle("open");
   });
 
-  // Tutup menu mobile setelah mengeklik tautan
   navMenu.querySelectorAll("a").forEach(function (link) {
     link.addEventListener("click", function () {
       hamburger.classList.remove("open");
@@ -340,346 +838,8 @@ function setupNavigation() {
     });
   });
 
-  // Bayangan navbar setelah digulir (menu aktif sudah ditangani setActiveNav)
   var navbar = document.getElementById("navbar");
   window.addEventListener("scroll", function () {
     navbar.classList.toggle("scrolled", window.scrollY > 30);
   });
-}
-
-// ============================================================================
-// MODAL FORM PEMESANAN
-// ============================================================================
-
-var _orderBackdrop = null;
-
-function bukaModalPesan(produk) {
-  tutupModalPesan();
-
-  var backdrop = document.createElement("div");
-  backdrop.className = "order-backdrop";
-  backdrop.addEventListener("click", function (e) {
-    if (e.target === backdrop) tutupModalPesan();
-  });
-
-  var card = document.createElement("div");
-  card.className = "order-card";
-
-  // --- Header ---
-  var header = document.createElement("div");
-  header.className = "order-header";
-
-  var title = document.createElement("h3");
-  title.className = "order-title";
-  title.textContent = "Form Pemesanan";
-
-  var closeBtn = document.createElement("button");
-  closeBtn.className = "order-close";
-  closeBtn.type = "button";
-  closeBtn.textContent = "\u2715";
-  closeBtn.setAttribute("aria-label", "Tutup");
-  closeBtn.addEventListener("click", tutupModalPesan);
-
-  header.appendChild(title);
-  header.appendChild(closeBtn);
-
-  // --- Body ---
-  var body = document.createElement("div");
-  body.className = "order-body";
-
-  // Field 1: Nama Produk (disabled)
-  var field1 = _buatFieldDisabled("Nama Produk", produk.name);
-
-  // Field 2: Harga (disabled)
-  var field2 = _buatFieldDisabled("Harga", "Rp " + formatRupiah(produk.price));
-
-  // Field: Atas Nama
-  var fieldNama = document.createElement("div");
-  fieldNama.className = "order-field";
-
-  var labelNama = document.createElement("label");
-  labelNama.textContent = "Atas Nama";
-
-  var inputNama = document.createElement("input");
-  inputNama.className = "order-input";
-  inputNama.type = "text";
-  inputNama.placeholder = "Contoh: Budi";
-  inputNama.id = "order-nama";
-  inputNama.maxLength = 100;
-
-  var errorNama = document.createElement("span");
-  errorNama.className = "order-error";
-  errorNama.id = "order-nama-error";
-
-  inputNama.addEventListener("input", function () {
-    _validasiFormPesan();
-  });
-
-  fieldNama.appendChild(labelNama);
-  fieldNama.appendChild(inputNama);
-  fieldNama.appendChild(errorNama);
-
-  // Field 3: Quantity
-  var field3 = document.createElement("div");
-  field3.className = "order-field";
-
-  var label3 = document.createElement("label");
-  label3.textContent = "Jumlah";
-
-  var input3 = document.createElement("input");
-  input3.className = "order-input";
-  input3.type = "text";
-  input3.inputMode = "numeric";
-  input3.placeholder = "Masukkan jumlah pesanan";
-  input3.id = "order-qty";
-
-  var error3 = document.createElement("span");
-  error3.className = "order-error";
-  error3.id = "order-qty-error";
-
-  input3.addEventListener("input", function () {
-    this.value = this.value.replace(/[^0-9]/g, "");
-    _validasiFormPesan();
-  });
-
-  field3.appendChild(label3);
-  field3.appendChild(input3);
-  field3.appendChild(error3);
-
-  // Field 4: Metode Pembayaran (radio)
-  var field4 = document.createElement("div");
-  field4.className = "order-field";
-
-  var label4 = document.createElement("label");
-  label4.textContent = "Metode Pembayaran";
-
-  var radioGroup = document.createElement("div");
-  radioGroup.className = "order-radio-group";
-
-  ["TUNAI", "QRIS"].forEach(function (method) {
-    var radioLabel = document.createElement("label");
-    radioLabel.className = "order-radio-label";
-
-    var radio = document.createElement("input");
-    radio.type = "radio";
-    radio.name = "order-payment";
-    radio.value = method;
-    radio.addEventListener("change", function () {
-      radioGroup.querySelectorAll(".order-radio-label").forEach(function (l) {
-        l.classList.remove("selected");
-      });
-      radioLabel.classList.add("selected");
-      _validasiFormPesan();
-    });
-
-    radioLabel.appendChild(radio);
-    radioLabel.appendChild(document.createTextNode(" " + method));
-    radioGroup.appendChild(radioLabel);
-  });
-
-  field4.appendChild(label4);
-  field4.appendChild(radioGroup);
-
-  // Field 5: Note (opsional)
-  var field5 = document.createElement("div");
-  field5.className = "order-field";
-
-  var label5 = document.createElement("label");
-  var labelMainText = document.createTextNode("Catatan ");
-  var labelHint = document.createElement("span");
-  labelHint.className = "order-hint";
-  labelHint.textContent = "(opsional)";
-  label5.appendChild(labelMainText);
-  label5.appendChild(labelHint);
-
-  var textarea = document.createElement("textarea");
-  textarea.className = "order-textarea";
-  textarea.id = "order-note";
-  textarea.placeholder = "Contoh: Pesan rasa ayam, Minta saus pedas extra";
-  textarea.maxLength = 500;
-
-  var charcount = document.createElement("span");
-  charcount.className = "order-charcount";
-  charcount.textContent = "0 / 500";
-
-  textarea.addEventListener("input", function () {
-    charcount.textContent = this.value.length + " / 500";
-  });
-
-  field5.appendChild(label5);
-  field5.appendChild(textarea);
-  field5.appendChild(charcount);
-
-  body.appendChild(field1);
-  body.appendChild(field2);
-  body.appendChild(fieldNama);
-  body.appendChild(field3);
-  body.appendChild(field4);
-  body.appendChild(field5);
-
-  // --- Actions ---
-  var actions = document.createElement("div");
-  actions.className = "order-actions";
-
-  var cancelBtn = document.createElement("button");
-  cancelBtn.className = "order-btn order-btn-cancel";
-  cancelBtn.type = "button";
-  cancelBtn.textContent = "Batal";
-  cancelBtn.addEventListener("click", tutupModalPesan);
-
-  var submitBtn = document.createElement("button");
-  submitBtn.className = "order-btn order-btn-submit";
-  submitBtn.type = "button";
-  submitBtn.id = "order-submit";
-  submitBtn.disabled = true;
-  submitBtn.textContent = "Pesan";
-  submitBtn.addEventListener("click", function () {
-    _kirimPesanan(produk);
-  });
-
-  actions.appendChild(cancelBtn);
-  actions.appendChild(submitBtn);
-
-  card.appendChild(header);
-  card.appendChild(body);
-  card.appendChild(actions);
-  backdrop.appendChild(card);
-  document.body.appendChild(backdrop);
-
-  _orderBackdrop = backdrop;
-  document.body.classList.add("modal-open");
-
-  requestAnimationFrame(function () {
-    backdrop.classList.add("active");
-  });
-
-  document.addEventListener("keydown", _handleOrderEscape);
-  input3.focus();
-}
-
-function _buatFieldDisabled(labelText, value) {
-  var field = document.createElement("div");
-  field.className = "order-field";
-  var label = document.createElement("label");
-  label.textContent = labelText;
-  var input = document.createElement("input");
-  input.className = "order-input";
-  input.type = "text";
-  input.value = value;
-  input.disabled = true;
-  field.appendChild(label);
-  field.appendChild(input);
-  return field;
-}
-
-function tutupModalPesan() {
-  if (!_orderBackdrop) return;
-  _orderBackdrop.classList.remove("active");
-  document.body.classList.remove("modal-open");
-  document.removeEventListener("keydown", _handleOrderEscape);
-  var bg = _orderBackdrop;
-  _orderBackdrop = null;
-  setTimeout(function () {
-    if (bg && bg.parentNode) bg.parentNode.removeChild(bg);
-  }, 200);
-}
-
-function _handleOrderEscape(e) {
-  if (e.key === "Escape") tutupModalPesan();
-}
-
-function _validasiFormPesan() {
-  var qtyInput = document.getElementById("order-qty");
-  var qtyError = document.getElementById("order-qty-error");
-  var namaInput = document.getElementById("order-nama");
-  var namaError = document.getElementById("order-nama-error");
-  var submitBtn = document.getElementById("order-submit");
-  if (!qtyInput || !submitBtn) return;
-
-  var qty = qtyInput.value;
-  var namaVal = (namaInput ? namaInput.value : "").replace(/<[^>]*>/g, "").trim();
-  var payment = document.querySelector("input[name=\"order-payment\"]:checked");
-  var valid = true;
-
-  if (!namaVal) {
-    if (namaInput) namaInput.classList.remove("error");
-    if (namaError) namaError.classList.remove("show");
-    valid = false;
-  } else if (namaVal.length < 2) {
-    if (namaInput) namaInput.classList.add("error");
-    if (namaError) {
-      namaError.textContent = "Nama minimal 2 karakter";
-      namaError.classList.add("show");
-    }
-    valid = false;
-  } else {
-    if (namaInput) namaInput.classList.remove("error");
-    if (namaError) namaError.classList.remove("show");
-  }
-
-  if (qty === "") {
-    qtyInput.classList.remove("error");
-    qtyError.classList.remove("show");
-    valid = false;
-  } else {
-    var qtyNum = parseInt(qty, 10);
-    if (isNaN(qtyNum) || qtyNum < 1) {
-      qtyInput.classList.add("error");
-      qtyError.textContent = "Jumlah harus minimal 1";
-      qtyError.classList.add("show");
-      valid = false;
-    } else if (qtyNum > 999) {
-      qtyInput.classList.add("error");
-      qtyError.textContent = "Jumlah maksimal 999";
-      qtyError.classList.add("show");
-      valid = false;
-    } else {
-      qtyInput.classList.remove("error");
-      qtyError.classList.remove("show");
-    }
-  }
-
-  if (!payment) valid = false;
-
-  if (valid) {
-    submitBtn.disabled = false;
-    submitBtn.classList.add("enabled");
-  } else {
-    submitBtn.disabled = true;
-    submitBtn.classList.remove("enabled");
-  }
-}
-
-function _sanitizeNote(input) {
-  var clean = input.replace(/<[^>]*>/g, "");
-  clean = clean.trim();
-  if (clean.length > 500) clean = clean.substring(0, 500);
-  return clean;
-}
-
-function _kirimPesanan(produk) {
-  var qty = parseInt(document.getElementById("order-qty").value, 10);
-  var payment = document.querySelector("input[name=\"order-payment\"]:checked").value;
-  var note = _sanitizeNote(document.getElementById("order-note").value);
-  var nama = _sanitizeNote(document.getElementById("order-nama").value);
-  var total = produk.price * qty;
-
-  var pesan = "Halo " + SITE_CONFIG.brandName + "! Saya mau pesan:\n\n" +
-    "\uD83D\uDC64 Atas Nama: " + nama + "\n" +
-    "\uD83D\uDCE6 Produk: " + produk.name + "\n" +
-    "\uD83D\uDCB0 Harga: Rp " + formatRupiah(produk.price) + "\n" +
-    "\uD83D\uDD22 Jumlah: " + qty + "\n" +
-    "\uD83D\uDCB3 Pembayaran: " + payment + "\n";
-
-  if (note) {
-    pesan += "\uD83D\uDCDD Catatan: " + note + "\n";
-  }
-
-  pesan += "\nTotal: Rp " + formatRupiah(total);
-
-  var url = "https://wa.me/" + SITE_CONFIG.whatsappNumber +
-    "?text=" + encodeURIComponent(pesan);
-
-  window.open(url, "_blank", "noopener");
-  tutupModalPesan();
 }
